@@ -4,7 +4,7 @@ using UafixApiNew.Services;
 
 const string User_Agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36";
 
-string port = Environment.GetEnvironmentVariable( "PORT" ) ?? "10000";
+string port = Environment.GetEnvironmentVariable( "PORT" ) ?? "5000";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,16 +40,14 @@ builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment()) {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors( "AllowAll" );
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
-app.UseStaticFiles();
+//app.UseStaticFiles();
 
 app.MapGet( "/api/status", () => {
 	return Results.Ok( new {
