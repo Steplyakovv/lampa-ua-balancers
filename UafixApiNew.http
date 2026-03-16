@@ -1,0 +1,6 @@
+@UafixApiNew_HostAddress = http://localhost:5126
+
+GET {{UafixApiNew_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
