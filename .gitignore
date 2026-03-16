@@ -4,5 +4,7 @@ obj/
 *.user
 *.suo
 *.cache
+*.pdb
+*.log
 node_modules/
 appsettings.Development.json
