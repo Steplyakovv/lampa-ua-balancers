@@ -12,9 +12,7 @@ public class UafixService : IMovieSource
 	private static class XPath
 	{
 		public const string PlayerIframe =
-			"//div[contains(@class, 'video-box')]//iframe | " +
-			"//iframe[contains(@src, 'embed')] | " +
-			"//iframe[contains(@src, 'player')]";
+			"//div[contains(@class, 'video-box')]//iframe";
 
 		public const string SearchItem = "//a[contains(@class, 'sres-wrap')]";
 
@@ -283,7 +281,7 @@ public class UafixService : IMovieSource
 		string? iframeUrl = GetIframeUrl( filmDoc, filmPageUrl );
 
 		if ( !string.IsNullOrEmpty( iframeUrl ) ) {
-			string playerHtml = await GetPlayerHtml( iframeUrl, filmPageUrl );
+			string playerHtml = await GetPlayerHtml( iframeUrl );
 			var match = Regex.Match( playerHtml, @"file\s*:\s*'(.*?)'", RegexOptions.Singleline | RegexOptions.Compiled );
 
 			if ( match.Success ) {
@@ -452,13 +450,13 @@ public class UafixService : IMovieSource
 
 		return iframeUrl switch {
 			var url when url.Contains( "youtube" ) => await GetYoutubeStreamUrl( url ),
-			var url when url.Contains( "zetvideo" ) => await GetBalancerStreamUrl( url, filmPageUrl ),
-			_ => await GetBalancerStreamUrl( iframeUrl, filmPageUrl )
+			var url when url.Contains( "zetvideo" ) => await GetBalancerStreamUrl( url ),
+			_ => await GetBalancerStreamUrl( iframeUrl )
 		};
 	}
 
-	private async Task<string?> GetBalancerStreamUrl( string url, string refUrl ) {
-		string playerHtml = await GetPlayerHtml( url, refUrl );
+	private async Task<string?> GetBalancerStreamUrl( string url ) {
+		string playerHtml = await GetPlayerHtml( url );
 		if ( string.IsNullOrEmpty( playerHtml ) )
 			return null;
 
@@ -479,9 +477,14 @@ public class UafixService : IMovieSource
 		); 
 	}
 
-	private async Task<string> GetPlayerHtml( string url, string refUrl ) {
+	private async Task<string> GetPlayerHtml( string url ) {
 		var request = new HttpRequestMessage( HttpMethod.Get, url );
-		request.Headers.Referrer = new Uri( refUrl );
+		//request.Headers.Referrer = new Uri( refUrl );
+
+		request.Headers.Referrer = new Uri( url );
+
+		var origin = new Uri( url ).GetLeftPart( UriPartial.Authority );
+		request.Headers.Add( "Origin", origin );
 
 		var playerResponse = await Сlient.SendAsync( request );
 
@@ -489,13 +492,33 @@ public class UafixService : IMovieSource
 	}
 
 	private string? GetIframeUrl( HtmlDocument document, string baseUrl ) {
-		var iframeNode = document.DocumentNode.SelectSingleNode( XPath.PlayerIframe );
+		var iframeNodes = document.DocumentNode.SelectNodes( XPath.PlayerIframe );
 
-		var src = iframeNode?.GetAttributeValue( "src", "" );
-
-		if ( string.IsNullOrEmpty( src ) )
+		if ( iframeNodes is null )
 			return null;
 
+		string? youtubeFallback = null;
+
+		foreach ( var iframe in iframeNodes ) {
+			var src = iframe.GetAttributeValue( "src", "" );
+
+			if ( string.IsNullOrEmpty( src ) )
+				continue;
+
+			var fullUrl = NormalizeUrl( src, baseUrl );
+
+			if ( fullUrl.Contains( "youtube" ) || fullUrl.Contains( "youtu.be" ) ) {
+				youtubeFallback = fullUrl;
+				continue;
+			}
+
+			return fullUrl;
+		}
+
+		return youtubeFallback;
+	}
+
+	private string NormalizeUrl( string src, string baseUrl ) {
 		if ( src.StartsWith( "//" ) )
 			return $"{new Uri( baseUrl ).Scheme}:{src}";
 

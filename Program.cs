@@ -18,7 +18,10 @@ builder.Services.AddHttpClient( "DefaultClient", client => {
 
 builder.Services.AddHttpClient( "UafixClient", client => {
 	client.BaseAddress = new Uri( "https://uafix.net" );
+
 	client.DefaultRequestHeaders.Add( "User-Agent", User_Agent );
+	client.DefaultRequestHeaders.Add( "Accept-Language", "en-US,en;q=0.9" );
+
 	client.Timeout = TimeSpan.FromSeconds( 20 );
 } );
 
@@ -111,5 +114,5 @@ app.MapGet( "/extract",
 } );
 
 
-app.Urls.Add( $"http://0.0.0.0:{port}" );
+//app.Urls.Add( $"http://0.0.0.0:{port}" );
 app.Run();
