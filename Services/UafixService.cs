@@ -479,7 +479,6 @@ public class UafixService : IMovieSource
 
 	private async Task<string> GetPlayerHtml( string url ) {
 		var request = new HttpRequestMessage( HttpMethod.Get, url );
-		//request.Headers.Referrer = new Uri( refUrl );
 
 		request.Headers.Referrer = new Uri( url );
 

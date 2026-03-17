@@ -60,6 +60,22 @@ app.MapGet( "/api/status", () => {
 	} );
 } );
 
+app.MapGet( "/debug-html", async ( string url, IHttpClientFactory factory ) => {
+	var client = factory.CreateClient( "UafixClient" );
+
+	var request = new HttpRequestMessage( HttpMethod.Get, url );
+
+	//request.Headers.Add( "User-Agent", "Mozilla/5.0" );
+	//request.Headers.Add( "Accept-Language", "en-US,en;q=0.9" );
+	request.Headers.Add( "Referer", "https://uafix.net/" );
+	request.Headers.Add( "Origin", "https://uafix.net" );
+
+	var response = await client.SendAsync( request );
+	var html = await response.Content.ReadAsStringAsync();
+
+	return Results.Content( html, "text/html" );
+} );
+
 app.MapGet( "/proxy-m3u8", async ( string url, IProxyService proxyService ) => {
 	if ( string.IsNullOrWhiteSpace( url ) )
 		return Results.BadRequest( new BaseResponse( "Url are required", false ) );
