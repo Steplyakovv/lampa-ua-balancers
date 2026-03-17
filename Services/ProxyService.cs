@@ -60,9 +60,11 @@ namespace UafixApiNew.Services
 
 				string absoluteUrl = line.StartsWith( "http" ) ? line : ( baseUrl + line );
 
-				lines[ i ] = absoluteUrl.Contains( ".m3u8" )
-					? $"{_myHost}/proxy-m3u8?url={Uri.EscapeDataString( absoluteUrl )}"
-					: _proxy + Uri.EscapeDataString( absoluteUrl );
+				//lines[ i ] = absoluteUrl.Contains( ".m3u8" )
+				//	? $"{_myHost}/proxy-m3u8?url={Uri.EscapeDataString( absoluteUrl )}"
+				//	: _proxy + Uri.EscapeDataString( absoluteUrl );
+
+				lines[ i ] = _proxy + Uri.EscapeDataString( absoluteUrl );
 			}
 
 			return string.Join( "\n", lines );
