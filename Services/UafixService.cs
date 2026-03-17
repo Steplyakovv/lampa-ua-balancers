@@ -13,6 +13,7 @@ public class UafixService : IMovieSource
 	{
 		public const string PlayerIframe =
 			"//div[contains(@class, 'video-box')]//iframe";
+		public const string PlayerIframeMeta = "//meta[@property='og:video:iframe']";
 
 		public const string SearchItem = "//a[contains(@class, 'sres-wrap')]";
 
@@ -493,28 +494,57 @@ public class UafixService : IMovieSource
 	private string? GetIframeUrl( HtmlDocument document, string baseUrl ) {
 		var iframeNodes = document.DocumentNode.SelectNodes( XPath.PlayerIframe );
 
-		if ( iframeNodes is null )
-			return null;
-
 		string? youtubeFallback = null;
 
-		foreach ( var iframe in iframeNodes ) {
-			var src = iframe.GetAttributeValue( "src", "" );
+		if ( iframeNodes is not null ) {
+			foreach ( var iframe in iframeNodes ) {
+				var src = iframe.GetAttributeValue( "src", "" );
 
-			if ( string.IsNullOrEmpty( src ) )
-				continue;
+				if ( string.IsNullOrWhiteSpace( src ) )
+					continue;
 
-			var fullUrl = NormalizeUrl( src, baseUrl );
+				var fullUrl = NormalizeUrl( src, baseUrl );
 
-			if ( fullUrl.Contains( "youtube" ) || fullUrl.Contains( "youtu.be" ) ) {
-				youtubeFallback = fullUrl;
-				continue;
+				if ( string.IsNullOrWhiteSpace( fullUrl ) )
+					continue;
+
+				if ( IsYoutube( fullUrl ) ) {
+					youtubeFallback = fullUrl;
+					continue;
+				}
+
+				return fullUrl;
 			}
-
-			return fullUrl;
 		}
 
+		var metaUrl = GetIframeFromMeta( document, baseUrl );
+
+		if ( !string.IsNullOrWhiteSpace( metaUrl ) && !IsYoutube( metaUrl ) )
+			return metaUrl;
+
 		return youtubeFallback;
+	}
+
+	private string? GetIframeFromMeta( HtmlDocument document, string baseUrl ) {
+		var meta = document.DocumentNode
+			.SelectSingleNode( XPath.PlayerIframeMeta );
+
+		if ( meta is null )
+			return null;
+
+		var content = meta.GetAttributeValue( "content", "" );
+
+		if ( string.IsNullOrWhiteSpace( content ) )
+			return null;
+
+		var match = Regex.Match( content, @"src=['""](?<url>[^'""]+)" );
+
+		if ( !match.Success )
+			return null;
+
+		var url = match.Groups[ "url" ].Value;
+
+		return NormalizeUrl( url, baseUrl );
 	}
 
 	private string NormalizeUrl( string src, string baseUrl ) {
@@ -527,6 +557,11 @@ public class UafixService : IMovieSource
 		}
 
 		return src;
+	}
+
+	private bool IsYoutube( string url ) {
+		return url.Contains( "youtube", StringComparison.OrdinalIgnoreCase ) ||
+			   url.Contains( "youtu.be", StringComparison.OrdinalIgnoreCase );
 	}
 
 	private async Task<HtmlDocument?> GetHtmlDocument( string url ) {

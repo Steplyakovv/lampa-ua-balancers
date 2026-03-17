@@ -4,7 +4,7 @@ using UafixApiNew.Services;
 
 const string User_Agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36";
 
-string port = Environment.GetEnvironmentVariable( "PORT" ) ?? "5000";
+//string port = Environment.GetEnvironmentVariable( "PORT" ) ?? "5000";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,15 +60,17 @@ app.MapGet( "/api/status", () => {
 	} );
 } );
 
-app.MapGet( "/debug-html", async ( string url, IHttpClientFactory factory ) => {
-	var client = factory.CreateClient( "UafixClient" );
+app.MapGet( "/debug-html", async ( 
+	string url, 
+	string clientNmae,
+	IHttpClientFactory factory 
+) => {
+	var client = factory.CreateClient( clientNmae );
 
 	var request = new HttpRequestMessage( HttpMethod.Get, url );
 
-	//request.Headers.Add( "User-Agent", "Mozilla/5.0" );
-	//request.Headers.Add( "Accept-Language", "en-US,en;q=0.9" );
-	request.Headers.Add( "Referer", "https://uafix.net/" );
-	request.Headers.Add( "Origin", "https://uafix.net" );
+	request.Headers.Add( "Referer", client.BaseAddress.ToString() );
+	request.Headers.Add( "Origin", client.BaseAddress.ToString() );
 
 	var response = await client.SendAsync( request );
 	var html = await response.Content.ReadAsStringAsync();
