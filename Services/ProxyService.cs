@@ -1,74 +1,77 @@
-﻿
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace UafixApiNew.Services
 {
 	public class ProxyService : IProxyService
 	{
 		private readonly IHttpClientFactory _clientFactory;
-		private readonly ILogger<UafixService> _logger;
+		private readonly ILogger<ProxyService> _logger;
+		private readonly IHttpContextAccessor _httpContextAccessor;
 
-		private readonly string _myHost;
-		private readonly string[] _needProxySource;
+		private readonly string[] _needProxySource = new[] { "https://ashdi.vip" };
 
-		private const string _proxy = "https://proxy-worker.s-teplyakovv.workers.dev/?url=";
-		private HttpClient Сlient => _clientFactory.CreateClient( "UafixClient" );
+		private const string WorkerProxy = "https://proxy-worker.s-teplyakovv.workers.dev/?url=";
 
-		public ProxyService( 
+		private HttpClient Client => _clientFactory.CreateClient( "UafixClient" );
+
+		public ProxyService(
 			IHttpClientFactory clientFactory,
 			IHttpContextAccessor httpContextAccessor,
-			ILogger<UafixService> logger
-		) {
+			ILogger<ProxyService> logger
+		)
+		{
 			_clientFactory = clientFactory;
+			_httpContextAccessor = httpContextAccessor;
 			_logger = logger;
-
-			_needProxySource = new[] { "https://ashdi.vip" };
-
-			var httpContext = httpContextAccessor.HttpContext;
-			_myHost = $"{httpContext?.Request.Scheme}://{httpContext?.Request.Host}";
 		}
 
 		public async Task<string?> GetProxyM3u8Result( string url ) {
 			var referrer = _needProxySource.FirstOrDefault( p => url.Contains( p ) );
 
-			var proxyUrl = string.IsNullOrWhiteSpace( referrer )
-				? null
-				: await ConvertToProxyM3u8( url, referrer );
+			if ( string.IsNullOrWhiteSpace( referrer ) )
+				return null;
 
-			_logger.LogInformation( "Прокси ссылка: {Query}", proxyUrl );
-
-			return proxyUrl;
+			return await ConvertToProxyM3u8( url, referrer );
 		}
 
 		private async Task<string> ConvertToProxyM3u8( string url, string referrer ) {
 			var request = new HttpRequestMessage( HttpMethod.Get, url );
-			request.Headers.Referrer = new Uri( referrer ); 
+			request.Headers.Referrer = new Uri( referrer );
 
-			var response = await Сlient.SendAsync( request );
+			var response = await Client.SendAsync( request );
+
+			var finalUrl = response.RequestMessage?.RequestUri?.ToString() ?? url;
+
+			_logger.LogInformation( "Original URL: {Url}", url );
+			_logger.LogInformation( "Final URL: {FinalUrl}", finalUrl );
+
 			var content = await response.Content.ReadAsStringAsync();
 
-			var baseUrl = url.Substring( 0, url.LastIndexOf( '/' ) + 1 );
+			var baseUrl = finalUrl.Substring( 0, finalUrl.LastIndexOf( '/' ) + 1 );
+
+			var myHost = GetMyHost();
 
 			var lines = content.Split( '\n' );
 
 			for ( int i = 0; i < lines.Length; i++ ) {
-				string line = lines[ i ].Trim();
+				var line = lines[ i ].Trim();
 
-				if ( string.IsNullOrWhiteSpace( line ) || line.StartsWith( "#" ) ) {
-					if ( line.StartsWith( "#EXT-X-KEY" ) )
-						lines[ i ] = RewriteKey( line, baseUrl );
+				if ( string.IsNullOrWhiteSpace( line ) )
+					continue;
 
+				if ( line.StartsWith( "#EXT-X-KEY" ) ) {
+					lines[ i ] = RewriteKey( line, baseUrl );
 					continue;
 				}
 
+				if ( line.StartsWith( "#" ) )
+					continue;
 
-				string absoluteUrl = line.StartsWith( "http" ) 
-					? line 
-					: baseUrl + line;
+				var absoluteUrl = BuildAbsoluteUrl( line, baseUrl );
 
-				lines[ i ] = absoluteUrl.Contains( ".m3u8" )
-					? $"{_myHost}/proxy-m3u8?url={Uri.EscapeDataString( absoluteUrl )}"
-					: _proxy + Uri.EscapeDataString( absoluteUrl );
+				lines[ i ] = absoluteUrl.EndsWith( ".m3u8" )
+					? $"{myHost}/proxy-m3u8?url={Uri.EscapeDataString( absoluteUrl )}"
+					: WorkerProxy + Uri.EscapeDataString( absoluteUrl );
 			}
 
 			return string.Join( "\n", lines );
@@ -82,13 +85,27 @@ namespace UafixApiNew.Services
 
 			var keyUrl = match.Groups[ "url" ].Value;
 
-			var absoluteKeyUrl = keyUrl.StartsWith( "http" )
-				? keyUrl
-				: baseUrl + keyUrl;
+			var absoluteKeyUrl = BuildAbsoluteUrl( keyUrl, baseUrl );
 
-			var proxiedKey = $"{_proxy}{Uri.EscapeDataString( absoluteKeyUrl )}";
+			var proxiedKey = WorkerProxy + Uri.EscapeDataString( absoluteKeyUrl );
 
 			return line.Replace( keyUrl, proxiedKey );
+		}
+
+		private string BuildAbsoluteUrl( string url, string baseUrl ) {
+			if ( url.StartsWith( "http" ) )
+				return url;
+
+			return new Uri( new Uri( baseUrl ), url ).ToString();
+		}
+
+		private string GetMyHost() {
+			var request = _httpContextAccessor.HttpContext?.Request;
+
+			if ( request == null )
+				return "";
+
+			return $"{request.Scheme}://{request.Host}";
 		}
 	}
 }

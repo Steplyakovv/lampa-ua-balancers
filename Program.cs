@@ -23,6 +23,8 @@ builder.Services.AddHttpClient( "UafixClient", client => {
 	client.DefaultRequestHeaders.Add( "Accept-Language", "en-US,en;q=0.9" );
 
 	client.Timeout = TimeSpan.FromSeconds( 20 );
+} ).ConfigurePrimaryHttpMessageHandler( () => new HttpClientHandler {
+	AllowAutoRedirect = true
 } );
 
 builder.Services.AddHttpContextAccessor();
@@ -105,30 +107,21 @@ app.MapGet( "/proxy-m3u8", async (
 	HttpContext context 
 ) => {
 	if ( string.IsNullOrWhiteSpace( url ) )
-		return Results.BadRequest( new BaseResponse( "Url are required", false ) );
+		return Results.BadRequest( "Url required" );
 
-	try {
-		var proxyUrl = await proxyService.GetProxyM3u8Result( url );
+	var result = await proxyService.GetProxyM3u8Result( url );
 
-		context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
-		context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
-		context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, OPTIONS";
+	if ( result == null )
+		return Results.Redirect( url );
 
-		return proxyUrl is null
-				? Results.Redirect( url )
-				: Results.Content( proxyUrl, "application/vnd.apple.mpegurl" );
-		
-	}
-	catch ( Exception ex ) { 
-		return Results.BadRequest( ex.Message ); 
-	}
-} );
-
-app.MapMethods( "/proxy-m3u8", new[] { "OPTIONS" }, ( HttpContext context ) => {
 	context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
 	context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
 	context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, OPTIONS";
 
+	return Results.Content( result, "application/vnd.apple.mpegurl" );
+} );
+
+app.MapMethods( "/proxy-m3u8", new[] { "OPTIONS" }, ( HttpContext context ) => {
 	return Results.Ok();
 } );
 
