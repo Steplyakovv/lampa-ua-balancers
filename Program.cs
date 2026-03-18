@@ -4,8 +4,6 @@ using UafixApiNew.Services;
 
 const string User_Agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36";
 
-//string port = Environment.GetEnvironmentVariable( "PORT" ) ?? "5000";
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -13,6 +11,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddHttpClient( "DefaultClient", client => {
 	client.DefaultRequestHeaders.Add( "User-Agent", User_Agent );
+	client.DefaultRequestHeaders.Add( "Accept-Language", "en-US,en;q=0.9" );
+
 	client.Timeout = TimeSpan.FromSeconds( 20 );
 } );
 
@@ -131,6 +131,4 @@ app.MapGet( "/extract",
 		return Results.NotFound( new BaseResponse( "Фильм не найден или поток недоступен", false )  );
 } );
 
-
-//app.Urls.Add( $"http://0.0.0.0:{port}" );
 app.Run();

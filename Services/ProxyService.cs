@@ -8,12 +8,11 @@ namespace UafixApiNew.Services
 		private readonly IHttpClientFactory _clientFactory;
 		private readonly ILogger<UafixService> _logger;
 
-		private readonly HttpClient _client;
 		private readonly string _myHost;
-
-		private const string _proxy = "https://proxy-worker.s-teplyakovv.workers.dev/?url=";
 		private readonly string[] _needProxySource;
 
+		private const string _proxy = "https://proxy-worker.s-teplyakovv.workers.dev/?url=";
+		private HttpClient Сlient => _clientFactory.CreateClient( "UafixClient" );
 
 		public ProxyService( 
 			IHttpClientFactory clientFactory,
@@ -24,8 +23,6 @@ namespace UafixApiNew.Services
 			_logger = logger;
 
 			_needProxySource = new[] { "https://ashdi.vip" };
-
-			_client = _clientFactory.CreateClient( "DefaultClient" );
 
 			var httpContext = httpContextAccessor.HttpContext;
 			_myHost = $"{httpContext?.Request.Scheme}://{httpContext?.Request.Host}";
@@ -47,7 +44,7 @@ namespace UafixApiNew.Services
 			var request = new HttpRequestMessage( HttpMethod.Get, url );
 			request.Headers.Referrer = new Uri( referrer ); 
 
-			var response = await _client.SendAsync( request );
+			var response = await Сlient.SendAsync( request );
 			var content = await response.Content.ReadAsStringAsync();
 
 			var baseUrl = url.Substring( 0, url.LastIndexOf( '/' ) + 1 );
