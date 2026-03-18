@@ -69,6 +69,8 @@ namespace UafixApiNew.Services
 					: WorkerProxy + Uri.EscapeDataString( absoluteUrl );
 
 				lines[ i ].Replace( "http://", "https://" );
+
+				_logger.LogInformation( "Proxy URL: {FinalUrl}", lines[ i ] );
 			}
 
 			return string.Join( "\n", lines );
