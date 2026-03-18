@@ -45,24 +45,24 @@ builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
-app.Use( async ( context, next ) => {
-	if ( context.Request.Method == "OPTIONS" ) {
-		context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
-		context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
-		context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, POST, OPTIONS";
+//app.Use( async ( context, next ) => {
+//	if ( context.Request.Method == "OPTIONS" ) {
+//		context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
+//		context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
+//		context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, POST, OPTIONS";
 
-		context.Response.StatusCode = 200;
+//		context.Response.StatusCode = 200;
 
-		return;
-	}
+//		return;
+//	}
 
-	await next();
+//	await next();
 
-	context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
-	context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
-	context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, POST, OPTIONS";
-	context.Response.Headers[ "Access-Control-Expose-Headers" ] = "*";
-} );
+//	context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
+//	context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
+//	context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, POST, OPTIONS";
+//	context.Response.Headers[ "Access-Control-Expose-Headers" ] = "*";
+//} );
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -99,12 +99,20 @@ app.MapGet( "/debug-html", async (
 	return Results.Content( html, "text/html" );
 } );
 
-app.MapGet( "/proxy-m3u8", async ( string url, IProxyService proxyService ) => {
+app.MapGet( "/proxy-m3u8", async ( 
+	string url, 
+	IProxyService proxyService, 
+	HttpContext context 
+) => {
 	if ( string.IsNullOrWhiteSpace( url ) )
 		return Results.BadRequest( new BaseResponse( "Url are required", false ) );
 
 	try {
 		var proxyUrl = await proxyService.GetProxyM3u8Result( url );
+
+		context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
+		context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
+		context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, OPTIONS";
 
 		return proxyUrl is null
 				? Results.Redirect( url )
@@ -114,6 +122,14 @@ app.MapGet( "/proxy-m3u8", async ( string url, IProxyService proxyService ) => {
 	catch ( Exception ex ) { 
 		return Results.BadRequest( ex.Message ); 
 	}
+} );
+
+app.MapMethods( "/proxy-m3u8", new[] { "OPTIONS" }, ( HttpContext context ) => {
+	context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
+	context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
+	context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, OPTIONS";
+
+	return Results.Ok();
 } );
 
 app.MapGet( "/find-stream", 
