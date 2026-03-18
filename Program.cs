@@ -47,25 +47,6 @@ builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
-//app.Use( async ( context, next ) => {
-//	if ( context.Request.Method == "OPTIONS" ) {
-//		context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
-//		context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
-//		context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, POST, OPTIONS";
-
-//		context.Response.StatusCode = 200;
-
-//		return;
-//	}
-
-//	await next();
-
-//	context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
-//	context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
-//	context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, POST, OPTIONS";
-//	context.Response.Headers[ "Access-Control-Expose-Headers" ] = "*";
-//} );
-
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -111,7 +92,7 @@ app.MapGet( "/proxy-m3u8", async (
 
 	var result = await proxyService.GetProxyM3u8Result( url );
 
-	if ( result == null )
+	if ( result is null )
 		return Results.Redirect( url );
 
 	context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
@@ -121,9 +102,7 @@ app.MapGet( "/proxy-m3u8", async (
 	return Results.Content( result, "application/vnd.apple.mpegurl" );
 } );
 
-app.MapMethods( "/proxy-m3u8", new[] { "OPTIONS" }, ( HttpContext context ) => {
-	return Results.Ok();
-} );
+app.MapMethods( "/proxy-m3u8", new[] { "OPTIONS" }, () => Results.Ok() );
 
 app.MapGet( "/find-stream", 
 	async ( 
