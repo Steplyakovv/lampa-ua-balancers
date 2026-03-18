@@ -30,23 +30,38 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IMovieSource, UafixService>();
 builder.Services.AddScoped<IProxyService, ProxyService>();
 
-builder.Services.AddCors( options => {
-	options.AddPolicy( "AllowAll", policy => {
-		policy
-			.AllowAnyOrigin()
-			.AllowAnyMethod()
-			.AllowAnyHeader();
-	} );
-} );
+//builder.Services.AddCors( options => {
+//	options.AddPolicy( "AllowAll", policy => {
+//		policy
+//			.AllowAnyOrigin()
+//			.AllowAnyMethod()
+//			.AllowAnyHeader();
+//	} );
+//} );
 
 builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
+app.Use( async ( context, next ) => {
+	context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
+	context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
+	context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, POST, OPTIONS";
+
+	if ( context.Request.Method == "OPTIONS" ) {
+		context.Response.StatusCode = 200;
+		return;
+	}
+
+	await next();
+} );
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseCors( "AllowAll" );
+//app.UseCors( "AllowAll" );
+
+//app.UseCors();
 
 //app.UseHttpsRedirection();
 
