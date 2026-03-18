@@ -64,11 +64,10 @@ namespace UafixApiNew.Services
 
 				var absoluteUrl = BuildAbsoluteUrl( line, baseUrl );
 
-				lines[ i ] = absoluteUrl.EndsWith( ".m3u8" ) 
+				lines[ i ] = ( absoluteUrl.EndsWith( ".m3u8" ) 
 					? $"{myHost}/proxy-m3u8?url={Uri.EscapeDataString( absoluteUrl )}"
-					: WorkerProxy + Uri.EscapeDataString( absoluteUrl );
-
-				lines[ i ].Replace( "http:", "https:" );
+					: WorkerProxy + Uri.EscapeDataString( absoluteUrl ) 
+				).Replace( "http:", "https:" );
 
 				_logger.LogInformation( "Proxy URL: {FinalUrl}", lines[ i ] );
 			}
