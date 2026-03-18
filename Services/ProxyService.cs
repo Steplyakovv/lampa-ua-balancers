@@ -1,4 +1,6 @@
 ﻿
+using System.Text.RegularExpressions;
+
 namespace UafixApiNew.Services
 {
 	public class ProxyService : IProxyService
@@ -55,19 +57,41 @@ namespace UafixApiNew.Services
 			for ( int i = 0; i < lines.Length; i++ ) {
 				string line = lines[ i ].Trim();
 
-				if ( string.IsNullOrWhiteSpace( line ) || line.StartsWith( "#" ) )
+				if ( string.IsNullOrWhiteSpace( line ) || line.StartsWith( "#" ) ) {
+					if ( line.StartsWith( "#EXT-X-KEY" ) )
+						lines[ i ] = RewriteKey( line, baseUrl );
+
 					continue;
+				}
 
-				string absoluteUrl = line.StartsWith( "http" ) ? line : ( baseUrl + line );
 
-				//lines[ i ] = absoluteUrl.Contains( ".m3u8" )
-				//	? $"{_myHost}/proxy-m3u8?url={Uri.EscapeDataString( absoluteUrl )}"
-				//	: _proxy + Uri.EscapeDataString( absoluteUrl );
+				string absoluteUrl = line.StartsWith( "http" ) 
+					? line 
+					: baseUrl + line;
 
-				lines[ i ] = _proxy + Uri.EscapeDataString( absoluteUrl );
+				lines[ i ] = absoluteUrl.Contains( ".m3u8" )
+					? $"{_myHost}/proxy-m3u8?url={Uri.EscapeDataString( absoluteUrl )}"
+					: _proxy + Uri.EscapeDataString( absoluteUrl );
 			}
 
 			return string.Join( "\n", lines );
+		}
+
+		private string RewriteKey( string line, string baseUrl ) {
+			var match = Regex.Match( line, @"URI=""(?<url>[^""]+)""" );
+
+			if ( !match.Success )
+				return line;
+
+			var keyUrl = match.Groups[ "url" ].Value;
+
+			var absoluteKeyUrl = keyUrl.StartsWith( "http" )
+				? keyUrl
+				: baseUrl + keyUrl;
+
+			var proxiedKey = $"{_proxy}{Uri.EscapeDataString( absoluteKeyUrl )}";
+
+			return line.Replace( keyUrl, proxiedKey );
 		}
 	}
 }

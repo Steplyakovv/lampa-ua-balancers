@@ -50,7 +50,7 @@ app.UseCors( "AllowAll" );
 
 //app.UseHttpsRedirection();
 
-//app.UseStaticFiles();
+app.UseStaticFiles();
 
 app.MapGet( "/api/status", () => {
 	return Results.Ok( new {
