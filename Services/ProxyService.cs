@@ -68,7 +68,7 @@ namespace UafixApiNew.Services
 					? $"{myHost}/proxy-m3u8?url={Uri.EscapeDataString( absoluteUrl )}"
 					: WorkerProxy + Uri.EscapeDataString( absoluteUrl );
 
-				lines[ i ].Replace( "http://", "https://" );
+				lines[ i ].Replace( "http:", "https:" );
 
 				_logger.LogInformation( "Proxy URL: {FinalUrl}", lines[ i ] );
 			}

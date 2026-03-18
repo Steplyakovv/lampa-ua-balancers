@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using UafixApiNew.Models;
 using UafixApiNew.Services;
+using static System.Net.WebRequestMethods;
 
 const string User_Agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36";
+
+var ss = "http://lampa-ua-balancers.onrender.com/proxy-m3u8?url=https%3A%2F%2Fashdi.vip%2Fvideo18%2F3%2Ffilms%2Fdavid.and.the.elves.2021.1080p.nf.webdl.ddp5.1.atmos.h.264_193188%2Fhls%2F720%2FAquXiHWPjuFUhA37BA%3D%3D%2Findex.m3u8";
+var res = ss.Replace( "http:", "https:" );
 
 var builder = WebApplication.CreateBuilder(args);
 
