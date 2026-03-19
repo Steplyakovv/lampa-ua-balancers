@@ -54,16 +54,16 @@ app.UseSwaggerUI();
 
 app.UseCors();
 
-var forwardOptions = new ForwardedHeadersOptions {
-	ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
-};
+//var forwardOptions = new ForwardedHeadersOptions {
+//	ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
+//};
 
-forwardOptions.KnownNetworks.Clear();
-forwardOptions.KnownProxies.Clear();
+//forwardOptions.KnownNetworks.Clear();
+//forwardOptions.KnownProxies.Clear();
 
-app.UseForwardedHeaders( forwardOptions );
+//app.UseForwardedHeaders( forwardOptions );
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
@@ -106,9 +106,9 @@ app.MapGet( "/proxy-m3u8", async (
 	if ( result is null )
 		return Results.Redirect( url );
 
-	context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
-	context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
-	context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, OPTIONS";
+	//context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
+	//context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
+	//context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, OPTIONS";
 
 	return Results.Content( result, "application/vnd.apple.mpegurl" );
 } );

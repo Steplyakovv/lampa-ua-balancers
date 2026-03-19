@@ -94,8 +94,8 @@ namespace UafixApiNew.Services
 
 		private string GetMyHost() {
 			var request = _httpContextAccessor.HttpContext?.Request;
-			if ( request == null )
-				return "";
+			if ( request is null )
+				return string.Empty;
 
 			return $"{request.Scheme}://{request.Host}";
 		}
