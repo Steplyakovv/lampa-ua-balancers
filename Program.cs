@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using UafixApiNew.Models;
 using UafixApiNew.Services;
-using static System.Net.WebRequestMethods;
 
 const string User_Agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36";
 
@@ -54,16 +53,16 @@ app.UseSwaggerUI();
 
 app.UseCors();
 
-//var forwardOptions = new ForwardedHeadersOptions {
-//	ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
-//};
+var forwardOptions = new ForwardedHeadersOptions {
+	ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
+};
 
-//forwardOptions.KnownNetworks.Clear();
-//forwardOptions.KnownProxies.Clear();
+forwardOptions.KnownNetworks.Clear();
+forwardOptions.KnownProxies.Clear();
 
-//app.UseForwardedHeaders( forwardOptions );
+app.UseForwardedHeaders( forwardOptions );
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
