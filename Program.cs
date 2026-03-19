@@ -63,7 +63,7 @@ app.UseCors();
 
 //app.UseForwardedHeaders( forwardOptions );
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
@@ -106,14 +106,8 @@ app.MapGet( "/proxy-m3u8", async (
 	if ( result is null )
 		return Results.Redirect( url );
 
-	//context.Response.Headers[ "Access-Control-Allow-Origin" ] = "*";
-	//context.Response.Headers[ "Access-Control-Allow-Headers" ] = "*";
-	//context.Response.Headers[ "Access-Control-Allow-Methods" ] = "GET, OPTIONS";
-
 	return Results.Content( result, "application/vnd.apple.mpegurl" );
 } );
-
-app.MapMethods( "/proxy-m3u8", new[] { "OPTIONS" }, () => Results.Ok() );
 
 app.MapGet( "/find-stream", 
 	async ( 
