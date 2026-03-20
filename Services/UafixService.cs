@@ -36,7 +36,7 @@ public class UafixService : IMovieSource
 
 	private const int _lengthShortwords = 4;
 	private const int _limitParallelRequest = 5;
-	private const int _limitSearchedPage = 5;
+	private const int _limitSearchedPage = 10;
 
 	private HttpClient Сlient => _clientFactory.CreateClient( "UafixClient" );
 
@@ -85,10 +85,10 @@ public class UafixService : IMovieSource
 		} );
 	}
 
-	public async Task<StreamResponse?> FindStreamAsync( string[] titles, VideoType videoType )
-		=> await GetStreamByTitlesAsync( titles, videoType );
+	public async Task<StreamResponse?> FindVideoLinkAsync( string[] titles, VideoType videoType )
+		=> await GetLinkVideoByTitlesAsync( titles, videoType );
 
-	private async Task<StreamResponse?> GetStreamByTitlesAsync( string[] titles, VideoType videoType ) {
+	private async Task<StreamResponse?> GetLinkVideoByTitlesAsync( string[] titles, VideoType videoType ) {
 		var distinctTitles = titles
 			.Where( t => !string.IsNullOrWhiteSpace( t ) )
 			.Select( t => t.Trim() )
@@ -98,7 +98,7 @@ public class UafixService : IMovieSource
 		foreach ( var title in distinctTitles ) {
 			_logger.LogInformation( "Uafix: Пробую поиск по названию: {Title}", title );
 
-			var result = await GetStreamByTitleAsync( title, videoType );
+			var result = await GetLinkVideoByTitleAsync( title, videoType );
 
 			if ( result is { Success: true } )
 				return result;
@@ -107,10 +107,10 @@ public class UafixService : IMovieSource
 				return result;
 		}
 
-		return await FindStreamBySplitTitlesAsync( distinctTitles, videoType );
+		return await FindLinkVideoBySplitTitlesAsync( distinctTitles, videoType );
 	}
 
-	private async Task<StreamResponse?> FindStreamBySplitTitlesAsync( string[] titles, VideoType videoType ) {
+	private async Task<StreamResponse?> FindLinkVideoBySplitTitlesAsync( string[] titles, VideoType videoType ) {
 		var searchedQueries = new HashSet<string>( StringComparer.OrdinalIgnoreCase );
 		int maxIteration = titles.Length - 1;
 
@@ -118,7 +118,7 @@ public class UafixService : IMovieSource
 			var words = titles[ t ].Split( ' ', StringSplitOptions.RemoveEmptyEntries );
 
 			if ( words.Length == 1 && t == maxIteration )
-				return await GetStreamByTitleAsync( titles[ t ], videoType );
+				return await GetLinkVideoByTitleAsync( titles[ t ], videoType );
 
 			for ( int i = words.Length - 1; i >= 1; i-- ) {
 				var reducedTitle = string.Join( " ", words.Take( i ) );
@@ -128,7 +128,7 @@ public class UafixService : IMovieSource
 
 				_logger.LogInformation( "Сокращенный поиск: {Query}", reducedTitle );
 
-				var result = await GetStreamByTitleAsync( reducedTitle, videoType );
+				var result = await GetLinkVideoByTitleAsync( reducedTitle, videoType );
 
 				if ( result is { Success: true } ) {
 					_logger.LogInformation( "Успешно найдено по: {Title}", reducedTitle );
@@ -140,13 +140,13 @@ public class UafixService : IMovieSource
 			}
 
 			if ( t == maxIteration )
-				return await GetStreamByTitleAsync( titles[ t ], videoType );
+				return await GetLinkVideoByTitleAsync( titles[ t ], videoType );
 		}
 
 		return null;
 	}
 
-	private async Task<StreamResponse?> GetStreamByTitleAsync( string title, VideoType videoType ) {
+	private async Task<StreamResponse?> GetLinkVideoByTitleAsync( string title, VideoType videoType ) {
 		if ( string.IsNullOrWhiteSpace( title ) )
 			return new StreamResponse( "Заголовок не может быть пустым", false, HttpStatusCode.InternalServerError );
 
@@ -199,9 +199,12 @@ public class UafixService : IMovieSource
 				if ( searchResults.Length == 1 ) {
 					_logger.LogInformation( "Uafix: Найден точный матч для {Title}, перехожу к извлечению.", title );
 
-					var directResult = await ExtractVideo( searchResults[ 0 ].Url, title, videoType );
-					if ( directResult is not null )
-						return directResult;
+
+					return new StreamResponse( searchResults[ 0 ].Url, title );
+
+					//var directResult = await ExtractVideo( searchResults[ 0 ].Url, title, videoType );
+					//if ( directResult is not null )
+					//	return directResult;
 				}
 
 				return new StreamResponse( title, searchResults );

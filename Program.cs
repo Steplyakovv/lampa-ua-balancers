@@ -62,8 +62,6 @@ forwardOptions.KnownProxies.Clear();
 
 app.UseForwardedHeaders( forwardOptions );
 
-//app.UseHttpsRedirection();
-
 app.UseStaticFiles();
 
 app.MapGet( "/api/status", () => {
@@ -108,7 +106,7 @@ app.MapGet( "/proxy-m3u8", async (
 	return Results.Content( result, "application/vnd.apple.mpegurl" );
 } );
 
-app.MapGet( "/find-stream", 
+app.MapGet( "/find-video-link", 
 	async ( 
 		[FromQuery] string[] titles, 
 		[FromQuery] VideoType videoType, 
@@ -118,7 +116,7 @@ app.MapGet( "/find-stream",
 			return Results.BadRequest( new BaseResponse( "Titles are required", false ) );
 
 		foreach ( var source in sources ) {
-			var result = await source.FindStreamAsync( titles, videoType );
+			var result = await source.FindVideoLinkAsync( titles, videoType );
 			if ( result is not null )
 				return Results.Ok( result );  
 		}
