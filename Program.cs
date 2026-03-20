@@ -106,7 +106,7 @@ app.MapGet( "/proxy-m3u8", async (
 	return Results.Content( result, "application/vnd.apple.mpegurl" );
 } );
 
-app.MapGet( "/find-video-link", 
+app.MapGet( "/find-stream", 
 	async ( 
 		[FromQuery] string[] titles, 
 		[FromQuery] VideoType videoType, 
@@ -116,7 +116,7 @@ app.MapGet( "/find-video-link",
 			return Results.BadRequest( new BaseResponse( "Titles are required", false ) );
 
 		foreach ( var source in sources ) {
-			var result = await source.FindVideoLinkAsync( titles, videoType );
+			var result = await source.FindStreamAsync( titles, videoType );
 			if ( result is not null )
 				return Results.Ok( result );  
 		}

@@ -74,9 +74,7 @@
 
         try {
             const videoType = getTypeVideo(movie);
-            let data = await fetchLinkVideo(movie, videoType);
-
-            debugger
+            const data = await fetchStream(movie, videoType);
 
             if (data && data.searchResults && data.searchResults.length) {
                 Lampa.Select.show({
@@ -100,8 +98,6 @@
                 return;
             }
 
-            data = await fetchStreamLink(data.url);
-
             playVideo(data, data.title || movie.title, movie, videoType);
         } catch (error) {
             Lampa.Noty.show('Помилка: ' + error.message);
@@ -117,7 +113,7 @@
 
     function playVideo(data, title, movie, videoType) {
         if (videoType === VideoType.Serial) {
-            playSerial(data, 'Оберить озвучку або сезон');
+            playSerial(data, 'Оберить озвучку або сезон')
         } else {
             playMovie(data, title, movie);
         }
@@ -179,63 +175,14 @@
         }
     }
 
-    async function fetchStreamLink(videoUrl) {
-
-        //const extractUrl = `${CONFIG.apiBase}/get-stream?htmlText=${encodeURIComponent(videoUrl)}`;
-
-        try {
-            const htmlText = await fetchLampa(videoUrl);
-
-            //const response = await fetch(extractUrl);
-
-            //if (!response.ok) {
-            //    const errorData = await response.json().catch(() => ({}));
-
-            //    return {
-            //        success: false,
-            //        status: response.status,
-            //        message: errorData.message || 'Помилка сервера'
-            //    };
-            //}
-
-            //return await response.json();
-
-            return {};
-        } catch (e) {
-            return {
-                success: false,
-                status: 500,
-                message: 'Нема звязку з сервером'
-            };
-        }
-    }
-
-    async function fetchLampa(url, options = {}) {
-        return new Promise((resolve, reject) => {
-            Lampa.Network.silent(url, (html) => {
-                Lampa.Noty.show('html получен');
-
-                resolve(html);
-            }, (error) => {
-                reject(error);
-            }, false, {
-                dataType: 'text',
-                headers: {
-                    'Referer': 'https://uafix.net',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
-                }
-            });
-        });
-    }
-
-    async function fetchLinkVideo(movie, videoType) {
+    async function fetchStream(movie, videoType) {
         const rawTitles = [movie.original_title, movie.title, movie.name]
             .filter(Boolean)
             .map(t => t.replace(/[:"'»«]/g, '').replace(/\s+/g, ' ').trim());
 
         const titles = [...new Set(rawTitles)];
         const params = titles.map(t => `titles=${encodeURIComponent(t)}`).join('&');
-        const url = `${CONFIG.apiBase}/find-video-link?${params}&videoType=${videoType}`;
+        const url = `${CONFIG.apiBase}/find-stream?${params}&videoType=${videoType}`;
 
         try {
             const response = await fetch(url);
