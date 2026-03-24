@@ -9,7 +9,7 @@ namespace UafixApiNew.Services
 		private readonly ILogger<ProxyStreamService> _logger;
 		private readonly IHttpContextAccessor _httpContextAccessor;
 
-		private HttpClient Client => _clientFactory.CreateClient( "UafixClient" );
+		private HttpClient Client => _clientFactory.CreateClient( "DefaultClient" );
 
 		public ProxyStreamService(
 			IHttpClientFactory clientFactory,
@@ -22,7 +22,7 @@ namespace UafixApiNew.Services
 		}
 
 		public async Task<string?> GetProxyM3u8Result( string url ) {
-			var referrer = ProxySettings.BalancersNeedProxy.FirstOrDefault( p => url.Contains( p ) );
+			var referrer = ProxyParams.BalancersNeedProxy.FirstOrDefault( p => url.Contains( p ) );
 			if ( string.IsNullOrWhiteSpace( referrer ) )
 				return null;
 
@@ -63,7 +63,7 @@ namespace UafixApiNew.Services
 
 				lines[ i ] = absoluteUrl.EndsWith( ".m3u8" )
 					? $"{myHost}/proxy-m3u8?url={Uri.EscapeDataString( absoluteUrl )}"
-					: ProxySettings.WorkerProxy + Uri.EscapeDataString( absoluteUrl );
+					: ProxyParams.WorkerProxy + Uri.EscapeDataString( absoluteUrl );
 			}
 
 			return string.Join( "\n", lines );
@@ -77,7 +77,7 @@ namespace UafixApiNew.Services
 			var keyUrl = match.Groups[ "url" ].Value;
 			var absoluteKeyUrl = BuildAbsoluteUrl( keyUrl, baseUrl );
 
-			var proxiedKey = ProxySettings.WorkerProxy + Uri.EscapeDataString( absoluteKeyUrl );
+			var proxiedKey = ProxyParams.WorkerProxy + Uri.EscapeDataString( absoluteKeyUrl );
 
 			return line.Replace( keyUrl, proxiedKey );
 		}

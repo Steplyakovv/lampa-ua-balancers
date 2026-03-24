@@ -18,7 +18,7 @@ builder.Services.AddHttpClient( "DefaultClient", client => {
 } );
 
 builder.Services.AddHttpClient( "UafixClient", client => {
-	client.BaseAddress = new Uri( UafixConstants.BaseUrl );
+	client.BaseAddress = new Uri( UafixParams.BaseUrl );
 
 	client.DefaultRequestHeaders.Add( "User-Agent", HeadersProperty.UserAgent );
 	client.DefaultRequestHeaders.Add( "Accept-Language", HeadersProperty.AcceptLanguage );
@@ -31,8 +31,9 @@ builder.Services.AddHttpClient( "UafixClient", client => {
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddSingleton<ProxyManager>();
-builder.Services.AddScoped<IMovieSource, UafixService>();
 builder.Services.AddScoped<IProxyStreamService, ProxyStreamService>();
+builder.Services.AddScoped<IMovieSource, UafixService>();
+
 
 builder.Services.AddCors( options =>
 {
@@ -75,7 +76,7 @@ app.MapGet( "/api/status", () => {
 
 app.MapGet( "/debug-html", async ( string url, ProxyManager proxyHtmlService ) => {
 	try {
-		var result = await proxyHtmlService.GetFirstValidHtml( url, UafixConstants.ValidationMessage );
+		var result = await proxyHtmlService.GetFirstValidHtml( url, UafixParams.ValidationMessage );
 
 		return Results.Content( result.ToString() );
 	} catch ( Exception ex ) {

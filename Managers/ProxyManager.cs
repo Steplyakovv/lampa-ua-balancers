@@ -15,7 +15,7 @@ public class ProxyManager
 	}
 
 	public async Task<HtmlDocument?> GetFirstValidHtml( string targetUrl, string errorMessage ) {
-		var proxyData = await Сlient.GetStringAsync( ProxySettings.ProxySourceIps );
+		var proxyData = await Сlient.GetStringAsync( ProxyParams.ProxySourceIps );
 		var proxies = proxyData.Split( '\n', StringSplitOptions.RemoveEmptyEntries )
 							   .Select( p => p.Trim() ).ToList();
 
@@ -24,7 +24,7 @@ public class ProxyManager
 
 		int proxyIndex = 0;
 
-		for ( ; proxyIndex < Math.Min( ProxySettings.BatchSize, proxies.Count ); proxyIndex++ ) {
+		for ( ; proxyIndex < Math.Min( ProxyParams.BatchSize, proxies.Count ); proxyIndex++ ) {
 			activeTasks.Add( TryGetHtml( targetUrl, proxies[ proxyIndex ], cts.Token ) );
 		}
 
@@ -57,15 +57,14 @@ public class ProxyManager
 
 	private async Task<string?> TryGetHtml( string url, string proxyAddr, CancellationToken token ) {
 		try {
-			var handler = new HttpClientHandler
-			{
+			var handler = new HttpClientHandler {
 				Proxy = new WebProxy( $"http://{proxyAddr}" ),
 				UseProxy = true,
 			};
 
 			using var client = new HttpClient( handler );
 
-			client.Timeout = TimeSpan.FromSeconds( 30 );
+			client.Timeout = TimeSpan.FromSeconds( ProxyParams.Timeout );
 
 			client.DefaultRequestHeaders.Add( "User-Agent", HeadersProperty.UserAgent );
 			client.DefaultRequestHeaders.Add( "Accept-Language", HeadersProperty.AcceptLanguage );

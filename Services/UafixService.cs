@@ -37,10 +37,6 @@ public class UafixService : IMovieSource
 	private readonly ProxyManager _proxyManager;
 	private readonly ILogger<UafixService> _logger;
 
-	private const int _lengthShortwords = 4;
-	private const int _limitParallelRequest = 10;
-	private const int _limitSearchedPage = 5;
-
 	private HttpClient Сlient => _clientFactory.CreateClient( "UafixClient" );
 
 	public UafixService(
@@ -128,7 +124,7 @@ public class UafixService : IMovieSource
 			for ( int i = words.Length - 1; i >= 1; i-- ) {
 				var reducedTitle = string.Join( " ", words.Take( i ) );
 
-				if ( reducedTitle.Length < _lengthShortwords || !searchedQueries.Add( reducedTitle ) )
+				if ( reducedTitle.Length < UafixParams.LengthShortwords || !searchedQueries.Add( reducedTitle ) )
 					continue;
 
 				_logger.LogInformation( "Сокращенный поиск: {Query}", reducedTitle );
@@ -180,7 +176,7 @@ public class UafixService : IMovieSource
 						.DefaultIfEmpty( 1 )
 						.Max();
 
-					int pagesToFetch = Math.Min( maxPages, _limitSearchedPage );
+					int pagesToFetch = Math.Min( maxPages, UafixParams.LimitSearchedPage );
 
 					if ( pagesToFetch > 1 ) {
 						var pageTasks = Enumerable.Range( 2, pagesToFetch - 1 )
@@ -382,7 +378,7 @@ public class UafixService : IMovieSource
 		if ( !sortedEpisodes.Any() )
 			return null;
 
-		var semaphore = new SemaphoreSlim( _limitParallelRequest );
+		var semaphore = new SemaphoreSlim( UafixParams.LimitParallelRequest );
 		var episodeTasks = sortedEpisodes.Select( async item => {
 			await semaphore.WaitAsync();
 
@@ -447,7 +443,7 @@ public class UafixService : IMovieSource
 
 	private async Task<string?> GetStreamVideoUrl( string filmPageUrl, bool isNeedProxy = false ) {
 		var filmDoc = isNeedProxy
-			? await _proxyManager.GetFirstValidHtml( filmPageUrl, UafixConstants.ValidationMessage )
+			? await _proxyManager.GetFirstValidHtml( filmPageUrl, UafixParams.ValidationMessage )
 			: await GetHtmlDocument( filmPageUrl );
 
 		if ( filmDoc is null )
