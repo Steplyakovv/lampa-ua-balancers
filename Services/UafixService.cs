@@ -3,7 +3,9 @@ using Microsoft.Extensions.Caching.Memory;
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using UafixApiNew.Managers;
 using UafixApiNew.Models;
+using UafixApiNew.Settings;
 
 namespace UafixApiNew.Services;
 
@@ -32,6 +34,7 @@ public class UafixService : IMovieSource
 
 	private readonly IHttpClientFactory _clientFactory;
 	private readonly IMemoryCache _cache;
+	private readonly ProxyManager _proxyManager;
 	private readonly ILogger<UafixService> _logger;
 
 	private const int _lengthShortwords = 4;
@@ -43,10 +46,12 @@ public class UafixService : IMovieSource
 	public UafixService(
 		IHttpClientFactory clientFactory,
 		IMemoryCache cache,
+		ProxyManager proxyManager,
 		ILogger<UafixService> logger
 	) {
 		_clientFactory = clientFactory;
 		_cache = cache;
+		_proxyManager = proxyManager;
 		_logger = logger;
 	}
 
@@ -382,7 +387,7 @@ public class UafixService : IMovieSource
 			await semaphore.WaitAsync();
 
 			try {
-				string? streamUrl = await GetStreamVideoUrl( item.Url );
+				string? streamUrl = await GetStreamVideoUrl( item.Url, true );
 				if ( string.IsNullOrEmpty( streamUrl ) )
 					return null;
 
@@ -440,8 +445,11 @@ public class UafixService : IMovieSource
 			: null;
 	}
 
-	private async Task<string?> GetStreamVideoUrl( string filmPageUrl ) {
-		var filmDoc = await GetHtmlDocument( filmPageUrl );
+	private async Task<string?> GetStreamVideoUrl( string filmPageUrl, bool isNeedProxy = false ) {
+		var filmDoc = isNeedProxy
+			? await _proxyManager.GetFirstValidHtml( filmPageUrl, UafixConstants.ValidationMessage )
+			: await GetHtmlDocument( filmPageUrl );
+
 		if ( filmDoc is null )
 			return null;
 

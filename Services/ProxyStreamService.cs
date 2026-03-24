@@ -1,31 +1,28 @@
 ﻿using System.Text.RegularExpressions;
+using UafixApiNew.Settings;
 
 namespace UafixApiNew.Services
 {
-	public class ProxyService : IProxyService
+	public class ProxyStreamService : IProxyStreamService
 	{
 		private readonly IHttpClientFactory _clientFactory;
-		private readonly ILogger<ProxyService> _logger;
+		private readonly ILogger<ProxyStreamService> _logger;
 		private readonly IHttpContextAccessor _httpContextAccessor;
-
-		private readonly string[] _needProxySource = new[] { "https://ashdi.vip" };
-		private const string WorkerProxy = "https://proxy-worker.s-teplyakovv.workers.dev/?url=";
 
 		private HttpClient Client => _clientFactory.CreateClient( "UafixClient" );
 
-		public ProxyService(
+		public ProxyStreamService(
 			IHttpClientFactory clientFactory,
 			IHttpContextAccessor httpContextAccessor,
-			ILogger<ProxyService> logger
-		)
-		{
+			ILogger<ProxyStreamService> logger
+		) {
 			_clientFactory = clientFactory;
 			_httpContextAccessor = httpContextAccessor;
 			_logger = logger;
 		}
 
 		public async Task<string?> GetProxyM3u8Result( string url ) {
-			var referrer = _needProxySource.FirstOrDefault( p => url.Contains( p ) );
+			var referrer = ProxySettings.BalancersNeedProxy.FirstOrDefault( p => url.Contains( p ) );
 			if ( string.IsNullOrWhiteSpace( referrer ) )
 				return null;
 
@@ -66,7 +63,7 @@ namespace UafixApiNew.Services
 
 				lines[ i ] = absoluteUrl.EndsWith( ".m3u8" )
 					? $"{myHost}/proxy-m3u8?url={Uri.EscapeDataString( absoluteUrl )}"
-					: WorkerProxy + Uri.EscapeDataString( absoluteUrl );
+					: ProxySettings.WorkerProxy + Uri.EscapeDataString( absoluteUrl );
 			}
 
 			return string.Join( "\n", lines );
@@ -80,7 +77,7 @@ namespace UafixApiNew.Services
 			var keyUrl = match.Groups[ "url" ].Value;
 			var absoluteKeyUrl = BuildAbsoluteUrl( keyUrl, baseUrl );
 
-			var proxiedKey = WorkerProxy + Uri.EscapeDataString( absoluteKeyUrl );
+			var proxiedKey = ProxySettings.WorkerProxy + Uri.EscapeDataString( absoluteKeyUrl );
 
 			return line.Replace( keyUrl, proxiedKey );
 		}
