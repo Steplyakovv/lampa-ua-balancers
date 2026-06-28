@@ -94,9 +94,6 @@ app.MapGet( "/proxy-m3u8", async (
 
 	var result = await proxyService.GetProxyM3u8Result( url );
 
-	if ( result is null )
-		return Results.Redirect( url );
-
 	return Results.Content( result, "application/vnd.apple.mpegurl" );
 } );
 
